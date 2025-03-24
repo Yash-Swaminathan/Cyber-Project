@@ -8,10 +8,14 @@ using TensorFlow/Keras for network traffic anomaly detection.
 import os
 import logging
 from datetime import datetime
-
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.layers import Dense, layers, models
+from tensorflow.keras import layers, models  # type: ignore
+
+
+@tf.keras.utils.register_keras_serializable()
+def custom_mse(y_true, y_pred):
+    return tf.reduce_mean(tf.square(y_pred - y_true), axis=-1)
 
 # Configure logging
 logging.basicConfig(
@@ -192,7 +196,8 @@ class DeepLearningDetector:
             DeepLearningDetector: Instance with the loaded model.
         """
         try:
-            model = tf.keras.models.load_model(model_path)
+            custom_objects = {'mse': custom_mse}
+            model = tf.keras.models.load_model(model_path, custom_objects=custom_objects)
             # Infer input shape from loaded model; default to autoencoder type.
             input_shape = model.input_shape[1:]
             instance = cls(model_type='autoencoder', input_shape=input_shape)

@@ -1,0 +1,21 @@
+{
+    "model_path": "models/network_anomaly_detector.h5",
+    "alert_threshold": 0.8,
+    "batch_size": 100,
+    "alert_cooldown_seconds": 300,
+    "alerting": {
+      "email": {
+        "enabled": true,
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "username": "your-email@gmail.com",
+        "password": "your-app-password",
+        "sender": "your-email@gmail.com",
+        "recipients": ["admin@example.com", "security@example.com"]
+      },
+      "slack": {
+        "enabled": true,
+        "webhook_url": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+      }
+    }
+  }

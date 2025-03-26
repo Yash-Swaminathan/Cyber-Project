@@ -410,7 +410,7 @@ class FeatureEngineer:
         
         # Perform encoding based on method
         if method == 'onehot':
-            encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
+            encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
             
             try:
                 # Fit encoder

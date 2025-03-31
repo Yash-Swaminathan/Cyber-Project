@@ -211,10 +211,10 @@ class DeepLearningDetector:
 if __name__ == "__main__":
     # Example usage:
     # For an autoencoder (non-sequential data), assume each sample has 20 features.
-    X_dummy = np.random.rand(1000, 20)
+    X_dummy = np.random.rand(1000, 18)
     
     # Initialize the detector for an autoencoder with a reduced encoding dimension.
-    detector = DeepLearningDetector(model_type='autoencoder', input_shape=(20,), model_params={'encoding_dim': 10})
+    detector = DeepLearningDetector(model_type='autoencoder', input_shape=(18,), model_params={'encoding_dim': 10})
     
     # Build and train the model on dummy data.
     detector.build_model()

@@ -8,13 +8,13 @@
         "enabled": true,
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
-        "username": "your-email@gmail.com",
-        "password": "your-app-password",
-        "sender": "your-email@gmail.com",
-        "recipients": ["admin@example.com", "security@example.com"]
+        "username": "yashswaminathan1@gmail.com",
+        "password": "51001265",
+        "sender": "yashswaminathan1@gmail.com",
+        "recipients": ["yashswaminathan1@gmail.com", "yashswaminathan1@gmail.com"]
       },
       "slack": {
-        "enabled": true,
+        "enabled": false,
         "webhook_url": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
       }
     }

@@ -1,5 +1,5 @@
 {
-    "model_path": "models/network_anomaly_detector.h5",
+    "model_path": "models/deep_autoencoder.h5",
     "alert_threshold": 0.8,
     "batch_size": 100,
     "alert_cooldown_seconds": 300,

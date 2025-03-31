@@ -24,6 +24,8 @@ import requests
 import asyncio
 from contextlib import asynccontextmanager
 
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
 # Import our Deep Learning Detector
 from deep_learning import DeepLearningDetector
 
@@ -49,7 +51,7 @@ def load_config():
     except FileNotFoundError:
         logger.warning(f"Config file {CONFIG_PATH} not found. Using default configuration.")
         return {
-            "model_path": "models/network_anomaly_detector.h5",
+            "model_path": "models/deep_autoencoder.h5",
             "alert_threshold": 0.8,
             "batch_size": 100,
             "alert_cooldown_seconds": 300,

@@ -21,7 +21,7 @@ def generate_random_ip():
 def generate_normal_flow():
     """Generate a normal network flow"""
     protocols = ["TCP", "UDP", "ICMP"]
-    common_ports = [80, 443, 22, 25, 53, 123, 8080]
+    common_ports = [80, 443, 22, 25, 53, 9000, 8000]
     
     src_ip = generate_random_ip()
     dst_ip = generate_random_ip()
@@ -131,7 +131,7 @@ def send_flows(api_url, flows, verbose=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Sample client for the network anomaly detection API")
-    parser.add_argument("--url", default="http://localhost:8000/api/v1/detect", help="API endpoint URL")
+    parser.add_argument("--url", default="http://127.0.0.1:8000/api/v1/detect", help="API endpoint URL")
     parser.add_argument("--batch-size", type=int, default=20, help="Number of flows per batch")
     parser.add_argument("--interval", type=float, default=5.0, help="Seconds between batches")
     parser.add_argument("--anomaly-prob", type=float, default=0.1, help="Probability of generating anomalous flows")

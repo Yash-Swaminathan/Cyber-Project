@@ -159,7 +159,7 @@ def preprocess_flow_data(flows: List[NetworkFlowData]) -> pd.DataFrame:
         flows (List[NetworkFlowData]): List of network flow data
         
     Returns:
-        pd.DataFrame: Preprocessed data ready for the model
+        pd.DataFrame: Preprocessed data ready for the model, along with the original DataFrame.
     """
     # Convert to DataFrame
     records = []
@@ -187,8 +187,8 @@ def preprocess_flow_data(flows: List[NetworkFlowData]) -> pd.DataFrame:
     
     df = pd.DataFrame(records)
     
-    # Convert timestamp to datetime
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    # Convert timestamp to datetime with error coercion (invalid formats become NaT)
+    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
     
     # Extract time-based features
     df['hour_of_day'] = df['timestamp'].dt.hour
@@ -211,6 +211,11 @@ def preprocess_flow_data(flows: List[NetworkFlowData]) -> pd.DataFrame:
     drop_cols = ['timestamp', 'src_ip', 'dst_ip', 'protocol']
     X = df.drop(columns=drop_cols)
     
+    # Check feature count and add dummy features if needed
+    if X.shape[1] == 18:
+         X['dummy_feature1'] = 0
+         X['dummy_feature2'] = 0
+         
     return X, df
 
 def generate_alert(anomaly_score: float, flow_data: pd.DataFrame, threshold: float) -> AnomalyAlert:

@@ -24,10 +24,11 @@ import requests
 import asyncio
 from contextlib import asynccontextmanager
 
+
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # Import our Deep Learning Detector
-from deep_learning import DeepLearningDetector
+from Backend.deep_learning import DeepLearningDetector
 
 # Configure logging
 logging.basicConfig(

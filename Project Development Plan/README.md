@@ -7,7 +7,7 @@ This project develops a real-time backend system for an Intrusion Detection Syst
 - **Real-Time Detection Engine:** API endpoints built with Flask/FastAPI for live data ingestion and prediction.
 - **Anomaly Detection:** Integration of traditional ML (Isolation Forest, One-Class SVM) and deep learning models (autoencoders, LSTM) to flag deviations from normal network behavior.
 - **Alerting & Logging:** Robust logging and alerting mechanisms to notify operators of suspicious activity.
-- **Testing:** Comprehensive unit and integration tests using pytest.
+- **Testing:** Comprehensive unit and integration tests using pytest. - pytest Fixtures in Conftest.py files
 - **Deployment:** Optional containerization with Docker for consistent deployment across environments.
 
 ## System Architecture

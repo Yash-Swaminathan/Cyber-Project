@@ -49,29 +49,22 @@ class PacketCapture:
         # Basic logging - customize with specific packet info as needed
         if hasattr(packet, 'summary'):
             logger.debug(f"Captured: {packet.summary()}")
-        return packet
+            return packet
     
     def start_capture(self, count=None, timeout=None, filter_str=None, save_file=None):
-        """
-        Start packet capture with the specified parameters
-        
-        Args:
-            count (int): Number of packets to capture (None for indefinite)
-            timeout (int): Timeout in seconds (None for no timeout)
-            filter_str (str): BPF filter string (e.g., "tcp port 80")
-            save_file (str): Filename to save the capture (None for auto-generated)
-            
-        Returns:
-            list: Captured packets
-        """
-        # Auto-generate filename if not provided
+    # If count is 0, immediately return an empty list
+        if count == 0:
+            logger.info("Count is 0; returning an empty capture.")
+            return []
+
+    # Auto-generate filename if not provided
         if save_file is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             save_file = f"{self.output_dir}/capture_{timestamp}.pcap"
-        
+
         logger.info(f"Starting packet capture with filter: {filter_str}")
         logger.info(f"Saving to: {save_file}")
-        
+
         try:
             # Start sniffing
             packets = sniff(
@@ -82,19 +75,20 @@ class PacketCapture:
                 timeout=timeout,
                 store=True
             )
-            
+
             # Save the captured packets
             wrpcap(save_file, packets)
             logger.info(f"Captured {len(packets)} packets and saved to {save_file}")
-            
+
             return packets
-        
+
         except KeyboardInterrupt:
             logger.info("Packet capture stopped by user")
             return []
         except Exception as e:
             logger.error(f"Error during packet capture: {str(e)}")
             return []
+
     
     def continuous_capture(self, interval=60, filter_str=None, max_files=None):
         """

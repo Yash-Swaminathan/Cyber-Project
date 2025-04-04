@@ -1,23 +1,7 @@
 import numpy as np
-import pandas as pd
 import pytest
 from Backend.anomaly_detection import AnomalyDetector
-from sklearn.datasets import make_classification
 
-@pytest.fixture
-def synthetic_data():
-    X, y = make_classification(
-        n_samples=200, 
-        n_features=20, 
-        n_informative=15, 
-        n_redundant=5, 
-        weights=[0.9, 0.1], 
-        random_state=42
-    )
-    X_df = pd.DataFrame(X, columns=[f'feature_{i}' for i in range(X.shape[1])])
-    # Convert labels: 0 becomes normal (1), 1 becomes anomaly (-1)
-    y_series = pd.Series(np.where(y == 0, 1, -1), name='label')
-    return X_df, y_series
 
 def test_prepare_and_train_anomaly_detector(anomaly_detector_instance, synthetic_data):
     X_df, y_series = synthetic_data

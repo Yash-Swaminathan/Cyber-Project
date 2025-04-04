@@ -1,11 +1,6 @@
 import numpy as np
-import pytest
-from Backend.deep_learning import DeepLearningDetector
+from Backend.Deep_Learning.deep_learning import DeepLearningDetector
 
-@pytest.fixture
-def dummy_data():
-    # Create dummy data with 18 features (matching our autoencoder configuration)
-    return np.random.rand(50, 18)
 
 def test_build_and_train_deep_learning_detector(deep_learning_detector, dummy_data):
     detector = deep_learning_detector

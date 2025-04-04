@@ -23,6 +23,7 @@ from email.mime.multipart import MIMEMultipart
 import requests
 import asyncio
 from contextlib import asynccontextmanager
+import runpy
 
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -31,13 +32,12 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 from Backend.Deep_Learning.deep_learning import DeepLearningDetector  # type: ignore
 
 # Configure logging
+os.makedirs("logs", exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("detection_api.log"),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.FileHandler(os.path.join("logs", "detection_api.log"), mode='a'), logging.StreamHandler()]
 )
 logger = logging.getLogger("DetectionAPI")
 

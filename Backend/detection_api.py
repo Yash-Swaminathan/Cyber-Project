@@ -28,7 +28,7 @@ from contextlib import asynccontextmanager
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # Import our Deep Learning Detector
-from Backend.deep_learning import DeepLearningDetector
+from Backend.Deep_Learning.deep_learning import DeepLearningDetector  # type: ignore
 
 # Configure logging
 logging.basicConfig(
@@ -125,7 +125,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to load model: {str(e)}")
         # Build a dummy model for testing instead of leaving detector as None
-        from Backend.deep_learning import DeepLearningDetector
         detector = DeepLearningDetector(model_type='autoencoder', input_shape=(18,), model_params={'encoding_dim': 10})
         detector.build_model()
         detector.threshold = config.get("alert_threshold", 0.8)

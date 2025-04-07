@@ -5,6 +5,7 @@ This module implements a FastAPI backend for real-time network traffic anomaly d
 ingesting live data, processing it, and generating alerts when anomalies are detected.
 """
 
+##############################################    MADE SAMPLE_CLIENT.PY RUN WHEN THIS IS STARTED
 import os
 import json
 import time
@@ -563,7 +564,31 @@ async def test_alert(background_tasks: BackgroundTasks):
     }
 
 if __name__ == "__main__":
-    import uvicorn
-    logger.info("Starting API server")
-    uvicorn.run(app, host="127.0.0.1", port=8000)
-   
+    import subprocess
+    import sys
+    import time
+
+    logger.info("Starting API server...")
+
+    # Start the FastAPI server as a subprocess
+    api_proc = subprocess.Popen([
+        sys.executable, "-m", "uvicorn", "Backend.detection_api:app", "--host", "127.0.0.1", "--port", "8000"
+    ])
+
+    # Wait a few seconds to allow the server to start
+    time.sleep(3)
+
+    logger.info("Starting sample client...")
+
+    # Start the sample client in another subprocess
+    client_proc = subprocess.Popen([
+        sys.executable, "Backend/sample_client.py", "--inject-anomaly", "-v"
+    ])
+
+    # Optional: wait for the API process to end before exiting this script
+    try:
+        api_proc.wait()
+    except KeyboardInterrupt:
+        logger.info("Shutting down...")
+        api_proc.terminate()
+        client_proc.terminate()

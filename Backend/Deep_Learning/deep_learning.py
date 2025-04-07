@@ -18,11 +18,13 @@ def custom_mse(y_true, y_pred):
     return tf.reduce_mean(tf.square(y_pred - y_true), axis=-1)
 
 # Configure logging
+os.makedirs("logs", exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("deep_learning.log"),
+        logging.FileHandler(os.path.join("logs", "deep_learning.log"), mode='a'),
         logging.StreamHandler()
     ]
 )

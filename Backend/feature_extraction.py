@@ -10,12 +10,16 @@ import numpy as np
 import logging
 from collections import defaultdict
 import ipaddress
+import os
 
 # Configure logging
+os.makedirs("logs", exist_ok=True)
+
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler("feature_extraction.log"), logging.StreamHandler()]
+    handlers=[logging.FileHandler(os.path.join("logs", "feature_extraction.log"), mode='a'), logging.StreamHandler()]
 )
 logger = logging.getLogger("FeatureExtraction")
 

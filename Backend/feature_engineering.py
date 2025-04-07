@@ -13,12 +13,15 @@ from scipy.stats import entropy
 from datetime import datetime, timedelta
 import ipaddress
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder
+import os
 
 # Configure logging
+os.makedirs("logs", exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler("feature_engineering.log"), logging.StreamHandler()]
+    handlers=[logging.FileHandler(os.path.join("logs", "feature_engineering.log"), mode='a'), logging.StreamHandler()]
 )
 logger = logging.getLogger("FeatureEngineering")
 

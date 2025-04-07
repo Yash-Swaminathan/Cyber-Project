@@ -20,12 +20,16 @@ from sklearn.metrics import precision_recall_curve, auc, f1_score
 from sklearn.preprocessing import StandardScaler
 
 # Configure logging
+os.makedirs("logs", exist_ok=True)
+
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler("anomaly_detection.log"), logging.StreamHandler()]
+    handlers=[logging.FileHandler(os.path.join("logs", "anomaly_detection.log"), mode='a'), logging.StreamHandler()]
 )
 logger = logging.getLogger("AnomalyDetection")
+
 
 class AnomalyDetector:
     def __init__(self, model_type='isolation_forest', model_params=None):

@@ -13,10 +13,15 @@ import logging
 from datetime import datetime
 
 # Configure logging
+os.makedirs("logs", exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler("pyshark_capture.log"), logging.StreamHandler()]
+    handlers=[
+        logging.FileHandler(os.path.join("logs", "pyshark_capture.log"), mode='a'),
+        logging.StreamHandler()
+    ]
 )
 logger = logging.getLogger("PySharkCapture")
 

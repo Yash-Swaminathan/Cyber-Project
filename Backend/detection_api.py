@@ -13,7 +13,7 @@ import uuid
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Body, Query, Depends
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Body, Query, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
@@ -25,6 +25,7 @@ import requests
 import asyncio
 from contextlib import asynccontextmanager
 import runpy
+
 
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -141,6 +142,18 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        try:
+            # In a real app you'd push real-time updates.
+            data = await websocket.receive_text()
+            await websocket.send_text(f"Echo: {data}")
+        except Exception as e:
+            break
+
 
 # Add CORS middleware
 app.add_middleware(

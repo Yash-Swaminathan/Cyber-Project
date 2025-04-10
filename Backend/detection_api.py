@@ -24,6 +24,7 @@ from email.mime.multipart import MIMEMultipart
 import requests
 import asyncio
 from contextlib import asynccontextmanager
+from typing import Tuple
 import runpy
 
 
@@ -164,21 +165,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def preprocess_flow_data(flows: List[NetworkFlowData]) -> pd.DataFrame:
-    """
-    Preprocess network flow data for the model
-    
-    Args:
-        flows (List[NetworkFlowData]): List of network flow data
-        
-    Returns:
-        pd.DataFrame: Preprocessed data ready for the model, along with the original DataFrame.
-    """
-    # Convert to DataFrame
+
+def preprocess_flow_data(flows: List[NetworkFlowData]) -> Tuple[pd.DataFrame, pd.DataFrame]:
     records = []
     for flow in flows:
+        ts = flow.timestamp if hasattr(flow, "timestamp") and flow.timestamp else datetime.now().isoformat()
         record = {
-            "timestamp": flow.timestamp,
+            "timestamp": ts,
             "src_ip": flow.src_ip,
             "dst_ip": flow.dst_ip,
             "src_port": flow.src_port,
@@ -190,40 +183,39 @@ def preprocess_flow_data(flows: List[NetworkFlowData]) -> pd.DataFrame:
             "packets_received": flow.packets_received,
             "duration": flow.duration,
         }
-        
-        # Add additional features if available
         if flow.additional_features:
             for key, value in flow.additional_features.items():
                 record[key] = value
-                
         records.append(record)
     
     df = pd.DataFrame(records)
+
+    # If 'timestamp' doesn’t exist or is empty, create one
+    if "timestamp" not in df.columns:
+        df["timestamp"] = pd.to_datetime(datetime.now().isoformat())
+    else:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     
-    # Convert timestamp to datetime with error coercion (invalid formats become NaT)
-    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
     df = df.fillna(0)
-    
-    # Extract time-based features
-    df['hour_of_day'] = df['timestamp'].dt.hour
-    df['day_of_week'] = df['timestamp'].dt.dayofweek
-    
-    # Convert categorical features
-    df['is_tcp'] = (df['protocol'] == 'TCP').astype(int)
-    df['is_udp'] = (df['protocol'] == 'UDP').astype(int)
-    df['is_icmp'] = (df['protocol'] == 'ICMP').astype(int)
-    
-    # Calculate derived features
-    df['bytes_per_packet_sent'] = df['bytes_sent'] / df['packets_sent'].replace(0, 1)
-    df['bytes_per_packet_recv'] = df['bytes_received'] / df['packets_received'].replace(0, 1)
-    df['total_bytes'] = df['bytes_sent'] + df['bytes_received']
-    df['total_packets'] = df['packets_sent'] + df['packets_received']
-    df['bytes_ratio'] = df['bytes_sent'] / df['total_bytes'].replace(0, 1)
-    df['packets_ratio'] = df['packets_sent'] / df['total_packets'].replace(0, 1)
-    
-    # Drop non-numeric columns that the model doesn't use
-    drop_cols = ['timestamp', 'src_ip', 'dst_ip', 'protocol']
+
+    # Add time-based features, etc.
+    df["hour_of_day"] = df["timestamp"].dt.hour
+    df["day_of_week"] = df["timestamp"].dt.dayofweek
+
+    df["is_tcp"] = (df["protocol"] == "TCP").astype(int)
+    df["is_udp"] = (df["protocol"] == "UDP").astype(int)
+    df["is_icmp"] = (df["protocol"] == "ICMP").astype(int)
+
+    df["bytes_per_packet_sent"] = df["bytes_sent"] / df["packets_sent"].replace(0, 1)
+    df["bytes_per_packet_recv"] = df["bytes_received"] / df["packets_received"].replace(0, 1)
+    df["total_bytes"] = df["bytes_sent"] + df["bytes_received"]
+    df["total_packets"] = df["packets_sent"] + df["packets_received"]
+    df["bytes_ratio"] = df["bytes_sent"] / df["total_bytes"].replace(0, 1)
+    df["packets_ratio"] = df["packets_sent"] / df["total_packets"].replace(0, 1)
+
+    drop_cols = ["timestamp", "src_ip", "dst_ip", "protocol"]
     X = df.drop(columns=drop_cols)
+    
     return X, df
 
 
@@ -515,28 +507,32 @@ async def detect_anomalies(
 
 @app.get("/api/v1/health")
 async def health_check():
-    """
-    Health check endpoint
-    """
-    return {
-        "status": "healthy" if detector is not None else "degraded",
-        "model_loaded": detector is not None,
-        "timestamp": datetime.now().isoformat()
-    }
+    try:
+        status = "healthy" if detector is not None else "degraded"
+        return {
+            "status": status,
+            "model_loaded": detector is not None,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error("Error in /api/v1/health: " + str(e))
+        raise HTTPException(status_code=500, detail="Health check failed")
+
 
 @app.get("/api/v1/config")
 async def get_config():
-    """
-    Get current configuration (sanitized)
-    """
-    # Create a copy and remove sensitive information
-    safe_config = config.copy()
-    if "alerting" in safe_config:
-        if "email" in safe_config["alerting"]:
-            if "password" in safe_config["alerting"]["email"]:
-                safe_config["alerting"]["email"]["password"] = "********"
-    
-    return safe_config
+    try:
+        # Create a copy of the configuration and mask any sensitive info
+        safe_config = config.copy() if config else {}
+        if "alerting" in safe_config:
+            if "email" in safe_config["alerting"]:
+                if "password" in safe_config["alerting"]["email"]:
+                    safe_config["alerting"]["email"]["password"] = "********"
+        return safe_config
+    except Exception as e:
+        logger.error("Error in /api/v1/config: " + str(e))
+        raise HTTPException(status_code=500, detail="Unable to get configuration")
+
 
 @app.post("/api/v1/test-alert")
 async def test_alert(background_tasks: BackgroundTasks):

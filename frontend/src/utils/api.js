@@ -1,5 +1,5 @@
 // API base URL configuration
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = '/api/v1';
 
 // Helper function for API calls
 const apiCall = async (endpoint, method = 'GET', data = null) => {
@@ -16,12 +16,12 @@ const apiCall = async (endpoint, method = 'GET', data = null) => {
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.detail || `API error: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
@@ -31,18 +31,15 @@ const apiCall = async (endpoint, method = 'GET', data = null) => {
 
 // API functions matching backend endpoints
 export const fetchHealthStatus = () => apiCall('/health');
-
 export const fetchConfig = () => apiCall('/config');
+export const processFlows = (flows) => apiCall('/detect', 'POST', { flows });
+export const sendTestAlert = (alertData) => apiCall('/test-alert', 'POST', alertData);
 
-export const processFlows = (flows) => 
-  apiCall('/detect', 'POST', { flows });
-
-export const sendTestAlert = () => 
-  apiCall('/test-alert', 'POST');
+// NEW: Update configuration on the server (expects a PUT endpoint)
+export const updateConfigOnServer = (newConfig) => apiCall('/config', 'PUT', newConfig);
 
 // Function to format network flow data for submission
 export const formatFlowData = (rawFlowData) => {
-  // Ensure data matches the NetworkFlowData model from the backend
   return {
     timestamp: rawFlowData.timestamp || new Date().toISOString(),
     src_ip: rawFlowData.src_ip,
@@ -55,7 +52,7 @@ export const formatFlowData = (rawFlowData) => {
     packets_sent: parseInt(rawFlowData.packets_sent),
     packets_received: parseInt(rawFlowData.packets_received),
     duration: parseFloat(rawFlowData.duration),
-    additional_features: rawFlowData.additional_features || null
+    additional_features: rawFlowData.additional_features || null,
   };
 };
 

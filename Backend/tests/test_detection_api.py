@@ -17,13 +17,15 @@ def test_config_endpoint(api_client: TestClient):
     response = api_client.get("/api/v1/config")
     assert response.status_code == 200
     data = response.json()
-    assert "alerting" in data
+    # Change expectation from "alerting" to "alerts"
+    assert "alerts" in data
     # Verify that sensitive fields are masked.
-    if "email" in data["alerting"]:
-        assert data["alerting"]["email"].get("password") == "********"
+    if "email" in data["alerts"]:
+        assert data["alerts"]["email"].get("password") == "********"
 
 def test_test_alert_endpoint(api_client: TestClient):
-    response = api_client.post("/api/v1/test-alert")
+    # Pass an empty JSON payload so that the required Body parameter is satisfied.
+    response = api_client.post("/api/v1/test-alert", json={})
     assert response.status_code == 200
     data = response.json()
     assert "message" in data

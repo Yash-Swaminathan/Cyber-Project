@@ -521,25 +521,59 @@ async def health_check():
 
 @app.get("/api/v1/config")
 async def get_config():
+    """
+    Return a JSON structure that includes alerts.thresholds
+    so that your React code has config.alerts.thresholds.
+    """
     try:
-        # Create a copy of the configuration and mask any sensitive info
-        safe_config = config.copy() if config else {}
-        if "alerting" in safe_config:
-            if "email" in safe_config["alerting"]:
-                if "password" in safe_config["alerting"]["email"]:
-                    safe_config["alerting"]["email"]["password"] = "********"
+        safe_config = {
+            "alerts": {
+                "thresholds": {
+                    "low": 0.3,
+                    "medium": 0.6,
+                    "high": 0.8
+                },
+                "notifications": {
+                    "email": True,
+                    "slack": False,
+                    "webhook": False
+                }
+            },
+            "model_path": "models/deep_autoencoder.h5",
+            "alert_threshold": 0.8,
+            "batch_size": 100,
+            "alert_cooldown_seconds": 300
+        }
         return safe_config
     except Exception as e:
         logger.error("Error in /api/v1/config: " + str(e))
         raise HTTPException(status_code=500, detail="Unable to get configuration")
 
+@app.put("/api/v1/config")
+async def update_config(new_config: dict):
+    try:
+        # Update your in-memory config or write to a file here.
+        global config
+        config = new_config
+        # Optionally, mask sensitive fields here
+        if "alerting" in config and "email" in config["alerting"]:
+            config["alerting"]["email"]["password"] = "********"
+        return config
+    except Exception as e:
+        logger.error("Error updating config: " + str(e))
+        raise HTTPException(status_code=500, detail="Unable to update configuration")
+
 
 @app.post("/api/v1/test-alert")
-async def test_alert(background_tasks: BackgroundTasks):
+async def test_alert(background_tasks: BackgroundTasks, payload: dict = Body(...)):
     """
-    Send a test alert
+    Send a test alert with optional severity/message
     """
-    # Create test flow data
+    # Extract severity/message from request body if provided
+    severity = payload.get("severity", "medium")
+    message = payload.get("message", "This is a test alert")
+
+    # Create test flow data (for demonstration)
     test_flow = NetworkFlowData(
         timestamp=datetime.now().isoformat(),
         src_ip="192.168.1.1",
@@ -553,24 +587,26 @@ async def test_alert(background_tasks: BackgroundTasks):
         packets_received=15,
         duration=1.5
     )
-    
-    # Create test alert
+
+    # Build an alert based on the payload
     alert = AnomalyAlert(
         alert_id=str(uuid.uuid4()),
         timestamp=datetime.now().isoformat(),
         severity="medium",
         anomaly_score=0.95,
         description="This is a test alert",
-        affected_flows=[test_flow.model_dump()]
-    )
-    
+        affected_flows=[test_flow.dict()]
+)
+
+
     # Send alerts in background
     background_tasks.add_task(send_alerts, alert)
     
     return {
-        "message": "Test alert sent",
+        "message": f"Test alert sent with severity='{severity}' and message='{message}'",
         "alert_id": alert.alert_id
     }
+
 
 if __name__ == "__main__":
     import subprocess

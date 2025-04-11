@@ -1,173 +1,165 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { 
-  fetchConfig, 
-  fetchHealthStatus, 
-  processFlows, 
-  sendTestAlert 
-} from '../utils/api';
-import useWebSocket from '../hooks/useWebSocket';
+import { fetchConfig, updateConfigOnServer, sendTestAlert as sendTestAlertApi } from '../utils/api';
 
-export const AppContext = createContext();
+// Dummy fetchAlerts for testing purposes.
+const fetchAlerts = async () => {
+  return [
+    {
+      alert_id: 'test-alert',
+      timestamp: new Date().toISOString(),
+      anomaly_score: 0.5,
+      severity: 'medium',
+      description: 'This is a test alert'
+    }
+  ];
+};
+
+export const AppContext = createContext({});
 
 export const AppProvider = ({ children }) => {
-  // Global state
+  // Config state for the Config panel.
   const [config, setConfig] = useState(null);
-  const [healthStatus, setHealthStatus] = useState({ status: 'unknown' });
+
+  // Other states
   const [alerts, setAlerts] = useState([]);
+  const [healthStatus, setHealthStatus] = useState({});
+  const [statistics, setStatistics] = useState({});
   const [recentFlows, setRecentFlows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [statistics, setStatistics] = useState({
-    totalFlows: 0,
-    totalAlerts: 0,
-    highSeverityCount: 0,
-    mediumSeverityCount: 0,
-    lowSeverityCount: 0
-  });
 
-  // WebSocket connection for real-time updates
-  const { lastMessage, connectionStatus } = useWebSocket('ws://localhost:8000/ws');
+  // getConfig wrapped in useCallback to keep it stable.
+  const getConfig = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchConfig();
+      setConfig(data);
+      return data;
+    } catch (err) {
+      console.error("Error loading configuration:", err);
+      setError("Failed to load configuration");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  // Load initial configuration and health status
+  // Load configuration once on mount.
   useEffect(() => {
-    const initialize = async () => {
+    getConfig();
+  }, [getConfig]);
+
+  // Load alerts on mount using dummy fetchAlerts.
+  useEffect(() => {
+    async function loadAlerts() {
       setIsLoading(true);
       try {
-        const [configData, healthData] = await Promise.all([
-          fetchConfig(),
-          fetchHealthStatus()
-        ]);
-        setConfig(configData);
-        setHealthStatus(healthData);
+        const data = await fetchAlerts();
+        setAlerts(
+          data && data.length > 0
+            ? data
+            : [{
+                alert_id: 'test-alert',
+                timestamp: new Date().toISOString(),
+                anomaly_score: 0.5,
+                severity: 'medium',
+                description: 'This is a test alert'
+              }]
+        );
       } catch (err) {
-        setError(`Failed to initialize: ${err.message}`);
-        console.error(err);
+        console.error('Error fetching alerts in AppContext:', err);
+        setAlerts([{
+          alert_id: 'test-alert',
+          timestamp: new Date().toISOString(),
+          anomaly_score: 0.5,
+          severity: 'medium',
+          description: 'This is a test alert'
+        }]);
       } finally {
         setIsLoading(false);
       }
-    };
-
-    initialize();
+    }
+    loadAlerts();
   }, []);
 
-  // Handle incoming WebSocket messages
+  // Update dummy health status and statistics based on alerts.
   useEffect(() => {
-    if (lastMessage) {
+    setHealthStatus({ status: 'healthy', model_loaded: true });
+    setStatistics({
+      totalFlows: 1000,
+      totalAlerts: alerts.length,
+      highSeverityCount: alerts.filter(a => a.severity.toLowerCase() === 'high').length
+    });
+  }, [alerts]);
+
+  // Load recent network flows (dummy data).
+  useEffect(() => {
+    async function loadFlows() {
       try {
-        const data = JSON.parse(lastMessage);
-        
-        if (data.type === 'alert') {
-          // Add new alert to state
-          setAlerts(prev => [data.alert, ...prev]);
-          
-          // Update statistics
-          setStatistics(prev => ({
-            ...prev,
-            totalAlerts: prev.totalAlerts + 1,
-            [`${data.alert.severity}SeverityCount`]: 
-              prev[`${data.alert.severity}SeverityCount`] + 1
-          }));
-        } 
-        else if (data.type === 'flow') {
-          // Add new flow data
-          setRecentFlows(prev => {
-            const newFlows = [...data.flows, ...prev].slice(0, 100); // Keep last 100 flows
-            return newFlows;
-          });
-          
-          // Update flow statistics
-          setStatistics(prev => ({
-            ...prev,
-            totalFlows: prev.totalFlows + data.flows.length
-          }));
-        }
+        // Replace with actual API call if available.
+        setRecentFlows([
+          {
+            src_ip: '192.168.0.10',
+            dst_ip: '10.0.0.5',
+            protocol: 'TCP',
+            bytes_sent: 1000,
+            bytes_received: 2000
+          }
+        ]);
       } catch (err) {
-        console.error('Error processing WebSocket message:', err);
+        console.error('Error loading flows', err);
       }
     }
-  }, [lastMessage]);
+    loadFlows();
+  }, []);
 
-  // Function to submit flows for detection
-  const submitFlows = useCallback(async (flowsData) => {
+  // Function to update configuration on the server.
+  const updateConfig = async (newConfig) => {
     setIsLoading(true);
     try {
-      const response = await processFlows(flowsData);
-      
-      if (response.alerts && response.alerts.length > 0) {
-        setAlerts(prev => [...response.alerts, ...prev]);
-      }
-      
-      return response;
+      const updated = await updateConfigOnServer(newConfig);
+      setConfig(updated);
+      return updated;
     } catch (err) {
-      setError(`Error processing flows: ${err.message}`);
-      throw err;
+      console.error("Failed to update configuration:", err);
+      setError("Failed to update configuration");
+      return null;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
-  // Function to send test alert
-  const triggerTestAlert = useCallback(async () => {
+  // Function to send a test alert.
+  const sendTestAlert = async (alertData) => {
     setIsLoading(true);
     try {
-      const response = await sendTestAlert();
+      const response = await sendTestAlertApi(alertData);
       return response;
     } catch (err) {
-      setError(`Error sending test alert: ${err.message}`);
-      throw err;
+      console.error("Error sending test alert:", err);
+      setError("Error sending test alert");
+      return null;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
-  // Function to refresh health status
-  const checkHealth = useCallback(async () => {
-    try {
-      const healthData = await fetchHealthStatus();
-      setHealthStatus(healthData);
-      return healthData;
-    } catch (err) {
-      setError(`Error checking health: ${err.message}`);
-      throw err;
-    }
-  }, []);
-
-  // Clear a specific alert
-  const clearAlert = useCallback((alertId) => {
-    setAlerts(prev => prev.filter(alert => alert.alert_id !== alertId));
-  }, []);
-
-  // Refresh configuration
-  const refreshConfig = useCallback(async () => {
-    try {
-      const configData = await fetchConfig();
-      setConfig(configData);
-      return configData;
-    } catch (err) {
-      setError(`Error refreshing config: ${err.message}`);
-      throw err;
-    }
-  }, []);
-
-  // Context value
-  const contextValue = {
+  const value = {
     config,
-    healthStatus,
+    getConfig,
+    updateConfig,
     alerts,
-    recentFlows,
+    healthStatus,
     statistics,
+    recentFlows,
     isLoading,
     error,
-    connectionStatus,
-    submitFlows,
-    triggerTestAlert,
-    checkHealth,
-    clearAlert,
-    refreshConfig
+    setAlerts,
+    sendTestAlert
   };
 
   return (
-    <AppContext.Provider value={contextValue}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

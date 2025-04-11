@@ -1,23 +1,20 @@
 import React, { createContext, useState, useCallback } from 'react';
-import {
-  fetchConfig,
-  fetchHealthStatus,
-  processFlows,
-  sendTestAlert,
-  submitFlowBatch
-} from '../utils/api';
+import axios from 'axios';
 
+const api = axios.create({
+  baseURL: '/api/v1'
+});
 
 export const APIContext = createContext({});
 
 export const APIProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const fetchNetworkFlows = useCallback(async (params = {}) => {
     try {
       setIsLoading(true);
-      const response = await api.get('/api/v1/flows', { params });
+      const response = await api.get('/flows', { params });
       return response.data;
     } catch (err) {
       setError(err.message || 'Failed to fetch network flows');
@@ -25,12 +22,12 @@ export const APIProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);  
-  
+  }, []);
+
   const fetchAlerts = useCallback(async (params = {}) => {
     try {
       setIsLoading(true);
-      const response = await api.get('/api/v1/alerts', { params });
+      const response = await api.get('/alerts', { params });
       return response.data;
     } catch (err) {
       setError(err.message || 'Failed to fetch alerts');
@@ -39,11 +36,11 @@ export const APIProvider = ({ children }) => {
       setIsLoading(false);
     }
   }, []);
-  
+
   const getAlertDetails = useCallback(async (alertId) => {
     try {
       setIsLoading(true);
-      const response = await api.get(`/api/v1/alerts/${alertId}`);
+      const response = await api.get(`/alerts/${alertId}`);
       return response.data;
     } catch (err) {
       setError(err.message || 'Failed to fetch alert details');
@@ -52,21 +49,21 @@ export const APIProvider = ({ children }) => {
       setIsLoading(false);
     }
   }, []);
-  
+
   const getSystemHealth = useCallback(async () => {
     try {
-      const response = await api.get('/api/v1/health');
+      const response = await api.get('/health');
       return response.data;
     } catch (err) {
       setError(err.message || 'Failed to fetch system health');
       throw err;
     }
   }, []);
-  
+
   const getSystemMetrics = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await api.get('/api/v1/metrics');
+      const response = await api.get('/metrics');
       return response.data;
     } catch (err) {
       setError(err.message || 'Failed to fetch system metrics');
@@ -75,11 +72,11 @@ export const APIProvider = ({ children }) => {
       setIsLoading(false);
     }
   }, []);
-  
+
   const detectAnomaly = useCallback(async (flowData) => {
     try {
       setIsLoading(true);
-      const response = await api.post('/api/v1/detect', flowData);
+      const response = await api.post('/detect', flowData);
       return response.data;
     } catch (err) {
       setError(err.message || 'Failed to run anomaly detection');
@@ -88,7 +85,7 @@ export const APIProvider = ({ children }) => {
       setIsLoading(false);
     }
   }, []);
-  
+
   const value = {
     isLoading,
     error,
@@ -100,7 +97,7 @@ export const APIProvider = ({ children }) => {
     detectAnomaly,
     clearError: () => setError(null)
   };
-  
+
   return (
     <APIContext.Provider value={value}>
       {children}

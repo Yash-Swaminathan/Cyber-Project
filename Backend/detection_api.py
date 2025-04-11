@@ -5,7 +5,6 @@ This module implements a FastAPI backend for real-time network traffic anomaly d
 ingesting live data, processing it, and generating alerts when anomalies are detected.
 """
 
-##############################################    MADE SAMPLE_CLIENT.PY RUN WHEN THIS IS STARTED
 import os
 import json
 import time

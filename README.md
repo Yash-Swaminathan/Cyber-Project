@@ -21,6 +21,8 @@
 
 ## System Architecture
 
+![System Diagram](System_Diagram.png)
+
 - **Data Collection & Preprocessing:**  
   Capture live network traffic using tools like Scapy or PyShark. Preprocess the data with Pandas and NumPy by extracting key features such as IP addresses, ports, protocols, packet sizes, and timestamps.
 

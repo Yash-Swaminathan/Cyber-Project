@@ -28,4 +28,4 @@ This project develops a real-time backend system for an Intrusion Detection Syst
 - **Logging:** Implement Python logging to record events and detected anomalies.
 - **Notifications:** Integrate alerting systems (email, dashboard updates, or messaging platforms) to inform operators in real time.
 
-### Must Use Python Version 3.11 or 3.10
+### Must Use Python Version 3.10

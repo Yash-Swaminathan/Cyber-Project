@@ -1,47 +1,32 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import { AppContext } from '../../context/AppContext';
 import AlertConfig from './AlertConfig';
 import TestAlert from './TestAlert';
 
 function ConfigPanel() {
-  const { getConfig, updateConfig } = useContext(AppContext);
-  const [config, setConfig] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
+  const { config, getConfig, updateConfig, isLoading, error } = useContext(AppContext);
+  const [localConfig, setLocalConfig] = useState(null);
+
+  // Load config once on mount.
   useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getConfig();
-        setConfig(data);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load configuration');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadConfig();
+    async function load() {
+      const cfg = await getConfig();
+      setLocalConfig(cfg);
+    }
+    load();
   }, [getConfig]);
-  
+
   const handleSaveConfig = async (newConfig) => {
     try {
-      setIsLoading(true);
-      await updateConfig(newConfig);
-      setConfig(newConfig);
+      const updated = await updateConfig(newConfig);
+      setLocalConfig(updated);
       return true;
     } catch (err) {
-      setError('Failed to update configuration');
       console.error(err);
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="p-4">
@@ -63,23 +48,27 @@ function ConfigPanel() {
     );
   }
   
+  if (!localConfig) {
+    return <div className="p-4">No configuration data available.</div>;
+  }
+
+  // Provide fallback if localConfig.alerts is undefined.
+  const configForAlert = localConfig.alerts || {
+    thresholds: { low: 0.3, medium: 0.6, high: 0.8 },
+    notifications: { email: false, slack: false, webhook: false }
+  };
+
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-2xl font-bold">System Configuration</h1>
-      
-      {config && (
-        <>
-          <AlertConfig 
-            config={config.alerts} 
-            onSave={(alertConfig) => {
-              const newConfig = {...config, alerts: alertConfig};
-              return handleSaveConfig(newConfig);
-            }} 
-          />
-          
-          <TestAlert />
-        </>
-      )}
+      <AlertConfig 
+        config={configForAlert} 
+        onSave={(alertConfig) => {
+          const newConfig = { ...localConfig, alerts: alertConfig };
+          return handleSaveConfig(newConfig);
+        }} 
+      />
+      <TestAlert />
     </div>
   );
 }

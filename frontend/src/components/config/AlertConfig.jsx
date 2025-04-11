@@ -1,53 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function AlertConfig({ config, onSave }) {
-  const [thresholds, setThresholds] = useState({
-    low: config.thresholds.low,
-    medium: config.thresholds.medium,
-    high: config.thresholds.high
-  });
-  
-  const [notificationSettings, setNotificationSettings] = useState({
-    email: config.notifications.email,
-    slack: config.notifications.slack,
-    webhook: config.notifications.webhook
-  });
-  
+  // If config.alerts or config.alerts.thresholds is missing,
+  // default to some values:
+  const defaultThresholds = {
+    low: 0.3,
+    medium: 0.6,
+    high: 0.8
+  };
+  const defaultNotifications = {
+    email: false,
+    slack: false,
+    webhook: false
+  };
+
+  // Safely extract thresholds and notifications:
+  const thresholdsFromConfig =
+    config?.alerts?.thresholds || defaultThresholds;
+  const notificationsFromConfig =
+    config?.alerts?.notifications || defaultNotifications;
+
+  const [thresholds, setThresholds] = useState(thresholdsFromConfig);
+  const [notificationSettings, setNotificationSettings] = useState(notificationsFromConfig);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
+
+  useEffect(() => {
+    // If config updates asynchronously, update state
+    setThresholds(config?.alerts?.thresholds || defaultThresholds);
+    setNotificationSettings(config?.alerts?.notifications || defaultNotifications);
+  }, [config]);
+
   const handleThresholdChange = (level, value) => {
-    setThresholds(prev => ({
+    setThresholds((prev) => ({
       ...prev,
       [level]: parseFloat(value)
     }));
   };
-  
+
   const handleNotificationToggle = (type) => {
-    setNotificationSettings(prev => ({
+    setNotificationSettings((prev) => ({
       ...prev,
       [type]: !prev[type]
     }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    
     const newConfig = {
-      thresholds,
-      notifications: notificationSettings
+      ...config,
+      alerts: {
+        thresholds,
+        notifications: notificationSettings
+      }
     };
-    
+
     const success = await onSave(newConfig);
-    
     setIsSaving(false);
     if (success) {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }
   };
-  
+
+  if (!config) {
+    return <div>Loading configuration...</div>;
+  }
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-4 border-b">
@@ -59,6 +79,7 @@ function AlertConfig({ config, onSave }) {
           <h3 className="text-md font-medium mb-3">Anomaly Score Thresholds</h3>
           
           <div className="space-y-4">
+            {/* Low Threshold */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Low Severity (0.0 - 1.0)
@@ -73,7 +94,8 @@ function AlertConfig({ config, onSave }) {
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
               />
             </div>
-            
+
+            {/* Medium Threshold */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Medium Severity (0.0 - 1.0)
@@ -88,7 +110,8 @@ function AlertConfig({ config, onSave }) {
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
               />
             </div>
-            
+
+            {/* High Threshold */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 High Severity (0.0 - 1.0)
@@ -110,6 +133,7 @@ function AlertConfig({ config, onSave }) {
           <h3 className="text-md font-medium mb-3">Notification Channels</h3>
           
           <div className="space-y-2">
+            {/* Email */}
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -122,7 +146,8 @@ function AlertConfig({ config, onSave }) {
                 Email Notifications
               </label>
             </div>
-            
+
+            {/* Slack */}
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -135,7 +160,8 @@ function AlertConfig({ config, onSave }) {
                 Slack Notifications
               </label>
             </div>
-            
+
+            {/* Webhook */}
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -155,7 +181,7 @@ function AlertConfig({ config, onSave }) {
           {saveSuccess && (
             <span className="text-green-600">Configuration saved successfully!</span>
           )}
-          
+
           <button
             type="submit"
             disabled={isSaving}
